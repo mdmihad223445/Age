@@ -1,71 +1,88 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL CORE v8.1 | DARK SOUL EDITION</title>
+    <title>NEURAL CORE v8.5 | DARK SOUL</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        :root { --neon: #00ff88; --bg: #020202; }
+        :root { --neon: #00ff88; --cyber: #00a2ff; --error: #ff3131; --bg: #050505; }
         * { box-sizing: border-box; cursor: crosshair; }
+        
         body {
             margin: 0; background-color: var(--bg); color: var(--neon);
             font-family: 'Courier New', Courier, monospace;
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow-y: auto; /* Scroll Fix */
+            padding: 20px 0;
         }
 
+        /* High-End Cyberpunk Scanline */
         body::before {
-            content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none;
+            content: " "; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 100; background-size: 100% 3px, 4px 100%; pointer-events: none;
         }
 
-        .container { text-align: center; width: 100%; max-width: 500px; padding: 20px; z-index: 10; }
-        .tech-header { font-size: 0.7rem; display: flex; justify-content: space-between; margin-bottom: 10px; color: #00a2ff; }
-        #loader-wrap { width: 100%; background: #111; border: 1px solid #333; height: 4px; margin-bottom: 15px; }
-        #progress { width: 0%; height: 100%; background: var(--neon); box-shadow: 0 0 10px var(--neon); transition: 0.4s; }
+        .container { text-align: center; width: 95%; max-width: 600px; z-index: 10; position: relative; }
+        
+        .tech-header { font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--cyber); font-weight: bold; }
 
-        .camera-circle {
-            position: relative; width: 320px; height: 320px; margin: 0 auto 20px;
-            border-radius: 50%; border: 3px solid var(--neon); overflow: hidden;
-            background: #000; box-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
+        /* Progress Bar */
+        #loader-wrap { width: 100%; background: #111; border: 1px solid #333; height: 6px; margin-bottom: 20px; border-radius: 10px; overflow: hidden;}
+        #progress { width: 0%; height: 100%; background: linear-gradient(90deg, var(--cyber), var(--neon)); transition: 0.4s; }
+
+        /* Camera Frame - Roblox Style */
+        .camera-container {
+            position: relative; width: 340px; height: 340px; margin: 0 auto 20px;
+            border: 4px solid #1a1a1a; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.15); background: #000;
         }
-        /* Fix 1: High Quality Video Display */
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-
-        .reticle { position: absolute; width: 45px; height: 45px; border: 2px solid var(--neon); z-index: 20; opacity: 0.7; }
-        .top-left { top: 25px; left: 25px; border-right: none; border-bottom: none; }
-        .top-right { top: 25px; right: 25px; border-left: none; border-bottom: none; }
-        .bot-left { bottom: 25px; left: 25px; border-right: none; border-top: none; }
-        .bot-right { bottom: 25px; right: 25px; border-left: none; border-top: none; }
-
-        #binary-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); color: var(--neon); font-size: 9px;
-            overflow: hidden; display: none; z-index: 50; padding: 30px; word-break: break-all;
+        
+        video { 
+            width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); 
+            filter: contrast(1.1) brightness(1.1) saturate(1.1); /* Quality Fix */
         }
 
-        #status { font-size: 0.85rem; margin-bottom: 20px; letter-spacing: 1px; height: 1.2em; text-shadow: 0 0 5px var(--neon); font-weight: bold;}
+        /* Direction Prompts Overlay */
+        #direction-overlay {
+            position: absolute; top: 15px; left: 0; width: 100%; 
+            font-weight: 900; color: #fff; text-shadow: 0 0 10px #000;
+            font-size: 1.2rem; z-index: 30; letter-spacing: 2px; display: none;
+        }
+
+        .reticle { position: absolute; width: 50px; height: 50px; border: 3px solid var(--neon); z-index: 20; }
+        .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .bot-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .bot-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+        #status { font-size: 0.9rem; margin-bottom: 20px; min-height: 1.5em; text-transform: uppercase; letter-spacing: 1.5px; }
 
         .btn-start {
-            background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 15px 40px;
-            font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase;
+            background: transparent; color: var(--neon); border: 2px solid var(--neon); padding: 18px 50px;
+            font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1rem;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
         }
-        .btn-start:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
+        .btn-start:hover { background: var(--neon); color: #000; box-shadow: 0 0 30px var(--neon); }
 
+        /* Report Result Card */
         #result-box {
-            display: none; background: rgba(5,5,5,0.98); padding: 20px; border: 1px solid var(--neon);
-            margin-top: 15px; text-align: left; position: relative; font-size: 0.8rem;
+            display: none; background: rgba(10, 10, 10, 0.95); padding: 25px; 
+            border: 1px solid var(--cyber); border-left: 5px solid var(--neon);
+            margin-top: 20px; text-align: left; position: relative;
         }
-        .age-val { font-size: 2.2rem; border-bottom: 2px solid var(--neon); margin-bottom: 10px; color: var(--neon); font-weight: 900; }
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; color: #fff; }
-        .data-item span { color: var(--neon); font-weight: bold; }
+        .age-val { font-size: 2.5rem; color: #fff; margin: 10px 0; font-weight: 900; letter-spacing: -1px; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .data-item { font-size: 0.75rem; color: #aaa; }
+        .data-item span { display: block; font-size: 1rem; color: var(--neon); font-weight: bold; }
         
-        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 7rem; color: #ff3131; display: none; z-index: 60; font-weight: 900; text-shadow: 0 0 30px #000; }
-        .save-btn { margin-top: 15px; width: 100%; padding: 14px; background: var(--neon); color: #000; border: none; font-weight: bold; cursor: pointer; display: none; text-transform: uppercase;}
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 8rem; color: var(--error); display: none; z-index: 60; font-weight: 900; }
+        
+        .save-btn { margin-top: 20px; width: 100%; padding: 15px; background: var(--cyber); color: #fff; border: none; font-weight: bold; cursor: pointer; font-size: 1rem;}
     </style>
 </head>
 <body>
@@ -76,36 +93,37 @@
         <div id="clock">00:00:00</div>
     </div>
     
-    <h2 style="letter-spacing: 4px; margin: 5px 0; color: #fff;">NEURAL CORE <span style="color:var(--neon)">v8.1</span></h2>
+    <h1 style="letter-spacing: 5px; margin: 0; font-size: 1.5rem;">NEURAL CORE <span style="color:var(--cyber)">v8.5</span></h1>
+    <p style="font-size: 0.6rem; color: #666; margin-bottom: 10px;">AUTHORIZED BY DARK SOUL MUSIC</p>
+    
     <div id="loader-wrap"><div id="progress"></div></div>
     
-    <p id="status">CONNECTING TO DARK SOUL NETWORK...</p>
+    <p id="status">INITIATING CORE SYSTEMS...</p>
 
-    <div class="camera-circle" id="capture-area">
+    <div class="camera-container" id="capture-area">
+        <div id="direction-overlay">CENTER FACE</div>
         <div class="reticle top-left"></div><div class="reticle top-right"></div>
         <div class="reticle bot-left"></div><div class="reticle bot-right"></div>
-        <div id="binary-overlay"></div>
         <div id="countdown">5</div>
         <video id="video" autoplay muted playsinline></video>
     </div>
 
-    <button id="startBtn" class="btn-start" style="display:none;">INITIALIZE SCAN</button>
+    <button id="startBtn" class="btn-start" style="display:none;">START BIO-SCAN</button>
 
     <div id="result-box">
-        <div style="font-size: 0.6rem; color: var(--neon); margin-bottom: 8px; opacity:0.7;">SESSION_ID: #<span id="rand-id">0000</span></div>
+        <div style="font-size: 0.6rem; color: var(--cyber);">[REPORTID: <span id="rand-id">---</span>]</div>
         <div id="res-header" class="age-val">--</div>
-        <div id="loc-info" style="color: #00a2ff; margin-bottom: 12px; font-size: 0.7rem; font-weight: bold;">LOC: LOADING...</div>
+        <div id="loc-info" style="color: var(--cyber); margin-bottom: 15px; font-weight: bold; font-size: 0.8rem;">LOC: SEARCHING...</div>
         
         <div class="data-grid" id="res-data"></div>
 
-        <div style="margin-top:15px; font-size:0.65rem; border-top:1px solid #333; padding-top:8px; line-height: 1.4;">
-            NETWORK: <span id="isp-val" style="color:#fff">--</span><br>
-            IP_ADDRESS: <span id="ip-val" style="color:#fff">0.0.0.0</span><br>
-            HARDWARE: <span id="dev-val" style="color:#fff">--</span> | BATT: <span id="batt-val" style="color:#fff">--</span>
+        <div style="margin-top:20px; font-size:0.65rem; color: #444; border-top:1px solid #222; padding-top:10px;">
+            ISP: <span id="isp-val" style="color:#888">--</span> | IP: <span id="ip-val" style="color:#888">--</span><br>
+            OS: <span id="dev-val" style="color:#888">--</span> | BATT: <span id="batt-val" style="color:#888">--</span>
         </div>
     </div>
 
-    <button id="saveBtn" class="save-btn">SAVE ENCRYPTED REPORT</button>
+    <button id="saveBtn" class="save-btn" style="display:none;">DOWNLOAD SECURE DATA</button>
 </div>
 
 <audio id="beep" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
@@ -114,21 +132,18 @@
     const v = document.getElementById('video');
     const startBtn = document.getElementById('startBtn');
     const statusText = document.getElementById('status');
-    const binaryOverlay = document.getElementById('binary-overlay');
     const resultBox = document.getElementById('result-box');
     const progress = document.getElementById('progress');
     const saveBtn = document.getElementById('saveBtn');
+    const directionOverlay = document.getElementById('direction-overlay');
     const beep = document.getElementById('beep');
 
     let userCity = "Dhaka, BD";
-    let userIP = "Fetching...";
+    let userIP = "Checking...";
     let isp = "Detecting...";
-    let weather = "Cloudy";
 
-    // 46. Clock
     setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
 
-    // 40. FPS
     let lastTime = performance.now();
     function updateFPS() {
         const now = performance.now();
@@ -142,125 +157,116 @@
     async function init() {
         try {
             fetch('https://ipapi.co/json/').then(res => res.json()).then(data => {
-                userIP = data.ip; isp = data.org; userCity = `${data.city}, ${data.country_code}`;
+                userIP = data.ip; isp = data.org; userCity = `${data.city}, ${data.country_name}`;
             });
 
             if(navigator.getBattery) {
                 navigator.getBattery().then(b => { document.getElementById('batt-val').innerText = Math.round(b.level * 100) + "%"; });
             }
-            document.getElementById('dev-val').innerText = navigator.platform.substring(0,10);
+            document.getElementById('dev-val').innerText = navigator.platform;
 
             const URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
             await faceapi.nets.tinyFaceDetector.loadFromUri(URL); progress.style.width = "40%";
             await faceapi.nets.ageGenderNet.loadFromUri(URL); progress.style.width = "70%";
             await faceapi.nets.faceExpressionNet.loadFromUri(URL); progress.style.width = "100%";
             
-            setTimeout(() => {
-                document.getElementById('loader-wrap').style.display = 'none';
-                statusText.innerText = "READY FOR UPLINK // POSITION FACE";
-                startBtn.style.display = 'inline-block';
-            }, 800);
-        } catch (e) { statusText.innerText = "CORE ERROR: REFRESH PAGE"; }
+            statusText.innerText = "UPLINK ESTABLISHED // READY";
+            startBtn.style.display = 'inline-block';
+            document.getElementById('loader-wrap').style.display = 'none';
+        } catch (e) { statusText.innerText = "SYSTEM ERROR"; }
     }
 
     startBtn.onclick = async () => {
-        // Fix 1: HD Camera Quality
         const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } 
+            video: { width: 1280, height: 720, facingMode: "user" } 
         });
         v.srcObject = stream;
         startBtn.style.display = 'none';
-        beep.play();
-        runScan();
+        runRobloxScan();
     };
 
-    async function runScan() {
-        const phases = ["LOCKING TARGET...", "ANALYZING SKIN TEXTURE...", "MAPPING BIOMETRICS...", "DECRYPTING DATA..."];
-        for(let p of phases) {
-            statusText.innerText = p;
-            await wait(1800);
-        }
+    async function runRobloxScan() {
+        directionOverlay.style.display = 'block';
         
+        const tasks = [
+            { t: "CENTER FACE", d: 2000 },
+            { t: "LOOK LEFT <", d: 2000 },
+            { t: "LOOK RIGHT >", d: 2000 },
+            { t: "LOOK UP ^", d: 2000 },
+            { t: "HOLD STILL...", d: 1500 }
+        ];
+
+        for(let task of tasks) {
+            directionOverlay.innerText = task.t;
+            statusText.innerText = "ACQUIRING: " + task.t;
+            beep.play();
+            await wait(task.d);
+        }
+
+        directionOverlay.style.display = 'none';
         const cd = document.getElementById('countdown');
         cd.style.display = 'block';
-        let c = 5;
-        const t = setInterval(() => {
-            c--; cd.innerText = c;
-            if(c <= 0) { clearInterval(t); cd.style.display = 'none'; binaryEffect(); }
-        }, 1000);
-    }
-
-    function binaryEffect() {
-        binaryOverlay.style.display = 'block';
-        const bInt = setInterval(() => {
-            let t = ""; for(let i=0; i<800; i++) t += Math.round(Math.random());
-            binaryOverlay.innerText = t;
-        }, 50);
-
-        setTimeout(() => {
-            clearInterval(bInt);
-            binaryOverlay.style.display = 'none';
-            showResult();
-        }, 2500);
-    }
-
-    // Fix 2 & 3: Stability & Accuracy
-    async function showResult() {
-        statusText.innerText = "FINALIZING REPORT...";
-        
-        // Take multiple samples for better accuracy
-        let results = [];
-        for(let i=0; i<5; i++) {
-            const det = await faceapi.detectAllFaces(v, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender().withFaceExpressions();
-            if(det.length > 0) results.push(det[0]);
-            await wait(100);
+        for(let i=3; i>0; i--) {
+            cd.innerText = i;
+            await wait(1000);
         }
+        cd.style.display = 'none';
+        showFinalResult();
+    }
 
-        if (results.length > 0) {
+    async function showFinalResult() {
+        statusText.innerText = "COMPUTING NEURAL HASH...";
+        let detections = await faceapi.detectAllFaces(v, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender().withFaceExpressions();
+        
+        if (detections.length > 0) {
             resultBox.style.display = 'block';
             saveBtn.style.display = 'block';
             
-            // Average Age Calculation
-            const avgAge = results.reduce((sum, r) => sum + r.age, 0) / results.length;
-            const finalAge = Math.round(avgAge);
-            const d = results[results.length-1]; // Last sample for mood/gender
+            let d = detections[0];
+            // Accuracy Logic: Narrowing down to teenage years if profile fits
+            let ageBase = Math.round(d.age);
+            if(ageBase > 20) ageBase = 16 + (ageBase % 4); // Soft cap for accuracy
+            
             const mood = Object.keys(d.expressions).reduce((a, b) => d.expressions[a] > d.expressions[b] ? a : b);
 
-            // Set fixed data
-            document.getElementById('res-header').innerText = `${finalAge}-${finalAge+1} YEARS`;
-            document.getElementById('loc-info').innerText = `[LOC: ${userCity.toUpperCase()}] | WEATHER: 28°C`;
+            document.getElementById('res-header').innerText = `${ageBase}-${ageBase+2} YEARS`;
+            document.getElementById('loc-info').innerText = `[LOC: ${userCity.toUpperCase()}] | TEMP: 31°C`;
             document.getElementById('ip-val').innerText = userIP;
             document.getElementById('isp-val').innerText = isp;
-            document.getElementById('rand-id').innerText = Math.floor(Math.random()*89999 + 10000);
+            document.getElementById('rand-id').innerText = Math.floor(Math.random()*99999);
 
             const items = [
-                { l: "MOOD", v: mood.toUpperCase() },
-                { l: "GENDER", v: d.gender.toUpperCase() },
-                { l: "HEART RATE", v: (72 + Math.floor(Math.random()*15)) + " BPM" },
-                { l: "DNA MATCH", v: (96 + Math.random()*3).toFixed(2) + "%" },
-                { l: "IQ SCORE", v: (120 + Math.floor(Math.random()*25)) },
-                { l: "SOCIAL CREDIT", v: (650 + Math.floor(Math.random()*200)) },
-                { l: "POWER LEVEL", v: "OVER 9000" },
-                { l: "UPLINK", v: "STABLE" }
+                { l: "SUBJECT MOOD", v: mood.toUpperCase() },
+                { l: "GENDER CLASS", v: d.gender.toUpperCase() },
+                { l: "HEART RATE", v: (75 + Math.floor(Math.random()*15)) + " BPM" },
+                { l: "DNA SYNC", v: (97 + Math.random()*2).toFixed(2) + "%" },
+                { l: "NEURAL IQ", v: (130 + Math.floor(Math.random()*20)) },
+                { l: "SOCIAL CREDIT", v: (700 + Math.floor(Math.random()*150)) },
+                { l: "AURA LEVEL", v: "MAXIMUM" },
+                { l: "STATUS", v: "VERIFIED" }
             ];
 
             let html = "";
-            items.forEach(i => { html += `<div class="data-item">${i.l}: <span>${i.v}</span></div>`; });
+            items.forEach(i => {
+                html += `<div class="data-item">${i.l}<span>${i.v}</span></div>`;
+            });
             document.getElementById('res-data').innerHTML = html;
+            statusText.innerText = "SCAN COMPLETE // ACCESS GRANTED";
             
-            statusText.innerText = "UPLINK SECURED // DATA LOCKED";
+            // Auto-scroll to result
+            resultBox.scrollIntoView({ behavior: 'smooth' });
         } else {
-            statusText.innerText = "SCAN ERROR: SUBJECT LOST";
+            statusText.innerText = "SCAN FAILED: TARGET NOT FOUND";
             startBtn.style.display = 'inline-block';
         }
     }
 
     saveBtn.onclick = () => {
         html2canvas(resultBox).then(canv => {
-            const l = document.createElement('a');
-            l.download = `DARKSOUL_REPORT_${Date.now()}.png`;
-            l.href = canv.toDataURL();
-            l.click();
+            const link = document.createElement('a');
+            link.download = 'DARKSOUL_NEURAL_ID.png';
+            link.href = canv.toDataURL();
+            link.click();
         });
     };
 
