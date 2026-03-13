@@ -9,25 +9,25 @@
     <style>
         body {
             margin: 0; padding: 0;
-            background-color: #050505;
+            background-color: #080808;
             color: #ffffff;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh;
         }
 
         .main-card {
-            width: 90%; max-width: 450px;
-            background: #111;
+            width: 90%; max-width: 420px;
+            background: #121212;
             padding: 30px;
-            border-radius: 30px;
+            border-radius: 25px;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
             border: 1px solid #222;
         }
 
-        h1 { color: #00a2ff; margin-bottom: 5px; font-size: 1.5rem; }
-        .desc { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+        h1 { color: #00b4ff; margin-bottom: 5px; font-size: 1.6rem; }
+        .desc { color: #777; font-size: 0.85rem; margin-bottom: 25px; }
 
         #video-container {
             position: relative;
@@ -36,39 +36,41 @@
             background: #000;
             border-radius: 20px;
             overflow: hidden;
-            display: none; /* Pehle hide rahega */
+            display: none;
             border: 2px solid #333;
+            margin-bottom: 15px;
         }
 
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
         .start-btn {
-            background: #00a2ff;
+            background: linear-gradient(135deg, #00b4ff, #0078ff);
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 16px 45px;
             font-size: 1.1rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
             transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3);
+            display: none; /* AI load hone tak hide rahega */
         }
 
-        .start-btn:hover { background: #0081cc; transform: scale(1.05); }
+        .start-btn:active { transform: scale(0.95); }
 
         #result-box {
             margin-top: 20px;
-            padding: 15px;
+            padding: 20px;
             background: #1a1a1a;
             border-radius: 15px;
             display: none;
+            border-top: 3px solid #00ff88;
         }
 
-        .age-text { font-size: 1.8rem; font-weight: bold; color: #00ff88; }
-        .dob-text { color: #aaa; margin-top: 5px; }
+        .age-text { font-size: 1.9rem; font-weight: 800; color: #00ff88; margin-bottom: 5px; }
+        .dob-text { color: #aaa; font-size: 0.95rem; line-height: 1.4; }
         
-        #loader-text { color: #ffae00; margin-bottom: 10px; font-weight: bold; }
+        #loader-text { color: #ffcc00; font-weight: bold; padding: 10px; }
     </style>
 </head>
 <body>
@@ -77,17 +79,17 @@
         <h1>AI Face Scanner</h1>
         <p class="desc">South Asian Age Prediction Engine</p>
 
-        <div id="loader-text">AI Models are warming up...</div>
+        <div id="loader-text">Initializing AI Engine... Please Wait</div>
         
-        <button id="startBtn" class="start-btn" style="display:none;">Start Scanning</button>
+        <button id="startBtn" class="start-btn">Start Scanning</button>
 
         <div id="video-container">
             <video id="video" autoplay muted playsinline></video>
         </div>
 
         <div id="result-box">
-            <div class="age-text" id="age-range">--</div>
-            <div class="dob-text" id="dob-info">--</div>
+            <div id="age-range" class="age-text">--</div>
+            <div id="dob-info" class="dob-text">--</div>
         </div>
     </div>
 
@@ -97,45 +99,50 @@
         const loaderText = document.getElementById('loader-text');
         const videoContainer = document.getElementById('video-container');
         const resultBox = document.getElementById('result-box');
-        const ageRange = document.getElementById('age-range');
-        const dobInfo = document.getElementById('dob-info');
+        const ageRangeDisplay = document.getElementById('age-range');
+        const dobInfoDisplay = document.getElementById('dob-info');
 
-        // Models load karne ka wait
-        async function loadAI() {
+        // Sabse stable Model URL (Direct from GitHub repo)
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+
+        async function setupAI() {
             try {
-                // Hum dusra model link use kar rahe hain jo fast hai
-                const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                // Models Loading
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
                 await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
                 
+                // Jab load ho jaye tab button dikhao
                 loaderText.style.display = 'none';
                 startBtn.style.display = 'inline-block';
-            } catch (e) {
-                loaderText.innerText = "Error: Check Internet Connection!";
-                console.error(e);
+            } catch (err) {
+                loaderText.innerText = "Error: Models failed to load. Refresh or check net.";
+                console.error(err);
             }
         }
 
-        // Button click hone par camera chalega
         startBtn.onclick = async () => {
-            startBtn.style.display = 'none';
-            videoContainer.style.display = 'block';
-            
-            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-            video.srcObject = stream;
-            
-            detectFace();
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+                
+                startBtn.style.display = 'none';
+                videoContainer.style.display = 'block';
+                
+                startDetection();
+            } catch (err) {
+                alert("Camera permission denied!");
+            }
         };
 
-        async function detectFace() {
+        function startDetection() {
             setInterval(async () => {
-                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
+                const result = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
                 
-                if (detection) {
+                if (result) {
                     resultBox.style.display = 'block';
-                    const age = Math.round(detection.age);
+                    const age = Math.round(result.age);
                     
-                    // Tera requested logic (1-2, 3-4, 15-16 etc)
+                    // Tera requested Age Range Logic
                     let start, end;
                     if (age % 2 === 0) {
                         start = age - 1; end = age;
@@ -143,15 +150,15 @@
                         start = age; end = age + 1;
                     }
 
-                    ageRange.innerText = `Your age: ${start}-${end}`;
+                    ageRangeDisplay.innerText = `Your age: ${start}-${end}`;
                     
                     const birthYear = 2026 - age;
-                    dobInfo.innerHTML = `Possibly ${age} year old<br>Birth: ${birthYear}/January/1`;
+                    dobInfoDisplay.innerHTML = `Possibly ${age} year old<br>Birth: ${birthYear}/January/1`;
                 }
             }, 1000);
         }
 
-        loadAI();
+        setupAI();
     </script>
 </body>
 </html>
