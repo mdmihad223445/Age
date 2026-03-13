@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Age Detector Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+
+        .main-card {
+            width: 90%; max-width: 450px;
+            background: #111;
+            padding: 30px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            border: 1px solid #222;
+        }
+
+        h1 { color: #00a2ff; margin-bottom: 5px; font-size: 1.5rem; }
+        .desc { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+
+        #video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            display: none; /* Pehle hide rahega */
+            border: 2px solid #333;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+
+        .start-btn {
+            background: #00a2ff;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 162, 255, 0.3);
+        }
+
+        .start-btn:hover { background: #0081cc; transform: scale(1.05); }
+
+        #result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            display: none;
+        }
+
+        .age-text { font-size: 1.8rem; font-weight: bold; color: #00ff88; }
+        .dob-text { color: #aaa; margin-top: 5px; }
+        
+        #loader-text { color: #ffae00; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <h1>AI Face Scanner</h1>
+        <p class="desc">South Asian Age Prediction Engine</p>
+
+        <div id="loader-text">AI Models are warming up...</div>
+        
+        <button id="startBtn" class="start-btn" style="display:none;">Start Scanning</button>
+
+        <div id="video-container">
+            <video id="video" autoplay muted playsinline></video>
+        </div>
+
+        <div id="result-box">
+            <div class="age-text" id="age-range">--</div>
+            <div class="dob-text" id="dob-info">--</div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const loaderText = document.getElementById('loader-text');
+        const videoContainer = document.getElementById('video-container');
+        const resultBox = document.getElementById('result-box');
+        const ageRange = document.getElementById('age-range');
+        const dobInfo = document.getElementById('dob-info');
+
+        // Models load karne ka wait
+        async function loadAI() {
+            try {
+                // Hum dusra model link use kar rahe hain jo fast hai
+                const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+                
+                loaderText.style.display = 'none';
+                startBtn.style.display = 'inline-block';
+            } catch (e) {
+                loaderText.innerText = "Error: Check Internet Connection!";
+                console.error(e);
+            }
+        }
+
+        // Button click hone par camera chalega
+        startBtn.onclick = async () => {
+            startBtn.style.display = 'none';
+            videoContainer.style.display = 'block';
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+            video.srcObject = stream;
+            
+            detectFace();
+        };
+
+        async function detectFace() {
+            setInterval(async () => {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
+                
+                if (detection) {
+                    resultBox.style.display = 'block';
+                    const age = Math.round(detection.age);
+                    
+                    // Tera requested logic (1-2, 3-4, 15-16 etc)
+                    let start, end;
+                    if (age % 2 === 0) {
+                        start = age - 1; end = age;
+                    } else {
+                        start = age; end = age + 1;
+                    }
+
+                    ageRange.innerText = `Your age: ${start}-${end}`;
+                    
+                    const birthYear = 2026 - age;
+                    dobInfo.innerHTML = `Possibly ${age} year old<br>Birth: ${birthYear}/January/1`;
+                }
+            }, 1000);
+        }
+
+        loadAI();
+    </script>
+</body>
+</html>
