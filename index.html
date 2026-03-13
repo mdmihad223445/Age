@@ -1,164 +1,271 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Age Detector Pro</title>
+    <title>NEURAL CORE v8.1 | DARK SOUL EDITION</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
+        :root { --neon: #00ff88; --bg: #020202; }
+        * { box-sizing: border-box; cursor: crosshair; }
         body {
-            margin: 0; padding: 0;
-            background-color: #080808;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh;
+            margin: 0; background-color: var(--bg); color: var(--neon);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden;
         }
 
-        .main-card {
-            width: 90%; max-width: 420px;
-            background: #121212;
-            padding: 30px;
-            border-radius: 25px;
-            text-align: center;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
-            border: 1px solid #222;
+        body::before {
+            content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
 
-        h1 { color: #00b4ff; margin-bottom: 5px; font-size: 1.6rem; }
-        .desc { color: #777; font-size: 0.85rem; margin-bottom: 25px; }
+        .container { text-align: center; width: 100%; max-width: 500px; padding: 20px; z-index: 10; }
+        .tech-header { font-size: 0.7rem; display: flex; justify-content: space-between; margin-bottom: 10px; color: #00a2ff; }
+        #loader-wrap { width: 100%; background: #111; border: 1px solid #333; height: 4px; margin-bottom: 15px; }
+        #progress { width: 0%; height: 100%; background: var(--neon); box-shadow: 0 0 10px var(--neon); transition: 0.4s; }
 
-        #video-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1/1;
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            display: none;
-            border: 2px solid #333;
-            margin-bottom: 15px;
+        .camera-circle {
+            position: relative; width: 320px; height: 320px; margin: 0 auto 20px;
+            border-radius: 50%; border: 3px solid var(--neon); overflow: hidden;
+            background: #000; box-shadow: 0 0 40px rgba(0, 255, 136, 0.2);
         }
-
+        /* Fix 1: High Quality Video Display */
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        .start-btn {
-            background: linear-gradient(135deg, #00b4ff, #0078ff);
-            color: white;
-            border: none;
-            padding: 16px 45px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.3s;
-            display: none; /* AI load hone tak hide rahega */
+        .reticle { position: absolute; width: 45px; height: 45px; border: 2px solid var(--neon); z-index: 20; opacity: 0.7; }
+        .top-left { top: 25px; left: 25px; border-right: none; border-bottom: none; }
+        .top-right { top: 25px; right: 25px; border-left: none; border-bottom: none; }
+        .bot-left { bottom: 25px; left: 25px; border-right: none; border-top: none; }
+        .bot-right { bottom: 25px; right: 25px; border-left: none; border-top: none; }
+
+        #binary-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); color: var(--neon); font-size: 9px;
+            overflow: hidden; display: none; z-index: 50; padding: 30px; word-break: break-all;
         }
 
-        .start-btn:active { transform: scale(0.95); }
+        #status { font-size: 0.85rem; margin-bottom: 20px; letter-spacing: 1px; height: 1.2em; text-shadow: 0 0 5px var(--neon); font-weight: bold;}
+
+        .btn-start {
+            background: transparent; color: var(--neon); border: 1px solid var(--neon); padding: 15px 40px;
+            font-weight: bold; cursor: pointer; transition: 0.3s; text-transform: uppercase;
+        }
+        .btn-start:hover { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
 
         #result-box {
-            margin-top: 20px;
-            padding: 20px;
-            background: #1a1a1a;
-            border-radius: 15px;
-            display: none;
-            border-top: 3px solid #00ff88;
+            display: none; background: rgba(5,5,5,0.98); padding: 20px; border: 1px solid var(--neon);
+            margin-top: 15px; text-align: left; position: relative; font-size: 0.8rem;
         }
-
-        .age-text { font-size: 1.9rem; font-weight: 800; color: #00ff88; margin-bottom: 5px; }
-        .dob-text { color: #aaa; font-size: 0.95rem; line-height: 1.4; }
+        .age-val { font-size: 2.2rem; border-bottom: 2px solid var(--neon); margin-bottom: 10px; color: var(--neon); font-weight: 900; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; color: #fff; }
+        .data-item span { color: var(--neon); font-weight: bold; }
         
-        #loader-text { color: #ffcc00; font-weight: bold; padding: 10px; }
+        #countdown { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 7rem; color: #ff3131; display: none; z-index: 60; font-weight: 900; text-shadow: 0 0 30px #000; }
+        .save-btn { margin-top: 15px; width: 100%; padding: 14px; background: var(--neon); color: #000; border: none; font-weight: bold; cursor: pointer; display: none; text-transform: uppercase;}
     </style>
 </head>
 <body>
 
-    <div class="main-card">
-        <h1>AI Face Scanner</h1>
-        <p class="desc">South Asian Age Prediction Engine</p>
+<div class="container">
+    <div class="tech-header">
+        <div id="fps">FPS: --</div>
+        <div id="clock">00:00:00</div>
+    </div>
+    
+    <h2 style="letter-spacing: 4px; margin: 5px 0; color: #fff;">NEURAL CORE <span style="color:var(--neon)">v8.1</span></h2>
+    <div id="loader-wrap"><div id="progress"></div></div>
+    
+    <p id="status">CONNECTING TO DARK SOUL NETWORK...</p>
 
-        <div id="loader-text">Initializing AI Engine... Please Wait</div>
+    <div class="camera-circle" id="capture-area">
+        <div class="reticle top-left"></div><div class="reticle top-right"></div>
+        <div class="reticle bot-left"></div><div class="reticle bot-right"></div>
+        <div id="binary-overlay"></div>
+        <div id="countdown">5</div>
+        <video id="video" autoplay muted playsinline></video>
+    </div>
+
+    <button id="startBtn" class="btn-start" style="display:none;">INITIALIZE SCAN</button>
+
+    <div id="result-box">
+        <div style="font-size: 0.6rem; color: var(--neon); margin-bottom: 8px; opacity:0.7;">SESSION_ID: #<span id="rand-id">0000</span></div>
+        <div id="res-header" class="age-val">--</div>
+        <div id="loc-info" style="color: #00a2ff; margin-bottom: 12px; font-size: 0.7rem; font-weight: bold;">LOC: LOADING...</div>
         
-        <button id="startBtn" class="start-btn">Start Scanning</button>
+        <div class="data-grid" id="res-data"></div>
 
-        <div id="video-container">
-            <video id="video" autoplay muted playsinline></video>
-        </div>
-
-        <div id="result-box">
-            <div id="age-range" class="age-text">--</div>
-            <div id="dob-info" class="dob-text">--</div>
+        <div style="margin-top:15px; font-size:0.65rem; border-top:1px solid #333; padding-top:8px; line-height: 1.4;">
+            NETWORK: <span id="isp-val" style="color:#fff">--</span><br>
+            IP_ADDRESS: <span id="ip-val" style="color:#fff">0.0.0.0</span><br>
+            HARDWARE: <span id="dev-val" style="color:#fff">--</span> | BATT: <span id="batt-val" style="color:#fff">--</span>
         </div>
     </div>
 
-    <script>
-        const video = document.getElementById('video');
-        const startBtn = document.getElementById('startBtn');
-        const loaderText = document.getElementById('loader-text');
-        const videoContainer = document.getElementById('video-container');
-        const resultBox = document.getElementById('result-box');
-        const ageRangeDisplay = document.getElementById('age-range');
-        const dobInfoDisplay = document.getElementById('dob-info');
+    <button id="saveBtn" class="save-btn">SAVE ENCRYPTED REPORT</button>
+</div>
 
-        // Sabse stable Model URL (Direct from GitHub repo)
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+<audio id="beep" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
 
-        async function setupAI() {
-            try {
-                // Models Loading
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
-                
-                // Jab load ho jaye tab button dikhao
-                loaderText.style.display = 'none';
+<script>
+    const v = document.getElementById('video');
+    const startBtn = document.getElementById('startBtn');
+    const statusText = document.getElementById('status');
+    const binaryOverlay = document.getElementById('binary-overlay');
+    const resultBox = document.getElementById('result-box');
+    const progress = document.getElementById('progress');
+    const saveBtn = document.getElementById('saveBtn');
+    const beep = document.getElementById('beep');
+
+    let userCity = "Dhaka, BD";
+    let userIP = "Fetching...";
+    let isp = "Detecting...";
+    let weather = "Cloudy";
+
+    // 46. Clock
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+    // 40. FPS
+    let lastTime = performance.now();
+    function updateFPS() {
+        const now = performance.now();
+        const fps = 1000 / (now - lastTime);
+        lastTime = now;
+        document.getElementById('fps').innerText = `FPS: ${fps.toFixed(1)}`;
+        requestAnimationFrame(updateFPS);
+    }
+    updateFPS();
+
+    async function init() {
+        try {
+            fetch('https://ipapi.co/json/').then(res => res.json()).then(data => {
+                userIP = data.ip; isp = data.org; userCity = `${data.city}, ${data.country_code}`;
+            });
+
+            if(navigator.getBattery) {
+                navigator.getBattery().then(b => { document.getElementById('batt-val').innerText = Math.round(b.level * 100) + "%"; });
+            }
+            document.getElementById('dev-val').innerText = navigator.platform.substring(0,10);
+
+            const URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(URL); progress.style.width = "40%";
+            await faceapi.nets.ageGenderNet.loadFromUri(URL); progress.style.width = "70%";
+            await faceapi.nets.faceExpressionNet.loadFromUri(URL); progress.style.width = "100%";
+            
+            setTimeout(() => {
+                document.getElementById('loader-wrap').style.display = 'none';
+                statusText.innerText = "READY FOR UPLINK // POSITION FACE";
                 startBtn.style.display = 'inline-block';
-            } catch (err) {
-                loaderText.innerText = "Error: Models failed to load. Refresh or check net.";
-                console.error(err);
-            }
+            }, 800);
+        } catch (e) { statusText.innerText = "CORE ERROR: REFRESH PAGE"; }
+    }
+
+    startBtn.onclick = async () => {
+        // Fix 1: HD Camera Quality
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } 
+        });
+        v.srcObject = stream;
+        startBtn.style.display = 'none';
+        beep.play();
+        runScan();
+    };
+
+    async function runScan() {
+        const phases = ["LOCKING TARGET...", "ANALYZING SKIN TEXTURE...", "MAPPING BIOMETRICS...", "DECRYPTING DATA..."];
+        for(let p of phases) {
+            statusText.innerText = p;
+            await wait(1800);
+        }
+        
+        const cd = document.getElementById('countdown');
+        cd.style.display = 'block';
+        let c = 5;
+        const t = setInterval(() => {
+            c--; cd.innerText = c;
+            if(c <= 0) { clearInterval(t); cd.style.display = 'none'; binaryEffect(); }
+        }, 1000);
+    }
+
+    function binaryEffect() {
+        binaryOverlay.style.display = 'block';
+        const bInt = setInterval(() => {
+            let t = ""; for(let i=0; i<800; i++) t += Math.round(Math.random());
+            binaryOverlay.innerText = t;
+        }, 50);
+
+        setTimeout(() => {
+            clearInterval(bInt);
+            binaryOverlay.style.display = 'none';
+            showResult();
+        }, 2500);
+    }
+
+    // Fix 2 & 3: Stability & Accuracy
+    async function showResult() {
+        statusText.innerText = "FINALIZING REPORT...";
+        
+        // Take multiple samples for better accuracy
+        let results = [];
+        for(let i=0; i<5; i++) {
+            const det = await faceapi.detectAllFaces(v, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender().withFaceExpressions();
+            if(det.length > 0) results.push(det[0]);
+            await wait(100);
         }
 
-        startBtn.onclick = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-                video.srcObject = stream;
-                
-                startBtn.style.display = 'none';
-                videoContainer.style.display = 'block';
-                
-                startDetection();
-            } catch (err) {
-                alert("Camera permission denied!");
-            }
-        };
+        if (results.length > 0) {
+            resultBox.style.display = 'block';
+            saveBtn.style.display = 'block';
+            
+            // Average Age Calculation
+            const avgAge = results.reduce((sum, r) => sum + r.age, 0) / results.length;
+            const finalAge = Math.round(avgAge);
+            const d = results[results.length-1]; // Last sample for mood/gender
+            const mood = Object.keys(d.expressions).reduce((a, b) => d.expressions[a] > d.expressions[b] ? a : b);
 
-        function startDetection() {
-            setInterval(async () => {
-                const result = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withAgeAndGender();
-                
-                if (result) {
-                    resultBox.style.display = 'block';
-                    const age = Math.round(result.age);
-                    
-                    // Tera requested Age Range Logic
-                    let start, end;
-                    if (age % 2 === 0) {
-                        start = age - 1; end = age;
-                    } else {
-                        start = age; end = age + 1;
-                    }
+            // Set fixed data
+            document.getElementById('res-header').innerText = `${finalAge}-${finalAge+1} YEARS`;
+            document.getElementById('loc-info').innerText = `[LOC: ${userCity.toUpperCase()}] | WEATHER: 28°C`;
+            document.getElementById('ip-val').innerText = userIP;
+            document.getElementById('isp-val').innerText = isp;
+            document.getElementById('rand-id').innerText = Math.floor(Math.random()*89999 + 10000);
 
-                    ageRangeDisplay.innerText = `Your age: ${start}-${end}`;
-                    
-                    const birthYear = 2026 - age;
-                    dobInfoDisplay.innerHTML = `Possibly ${age} year old<br>Birth: ${birthYear}/January/1`;
-                }
-            }, 1000);
+            const items = [
+                { l: "MOOD", v: mood.toUpperCase() },
+                { l: "GENDER", v: d.gender.toUpperCase() },
+                { l: "HEART RATE", v: (72 + Math.floor(Math.random()*15)) + " BPM" },
+                { l: "DNA MATCH", v: (96 + Math.random()*3).toFixed(2) + "%" },
+                { l: "IQ SCORE", v: (120 + Math.floor(Math.random()*25)) },
+                { l: "SOCIAL CREDIT", v: (650 + Math.floor(Math.random()*200)) },
+                { l: "POWER LEVEL", v: "OVER 9000" },
+                { l: "UPLINK", v: "STABLE" }
+            ];
+
+            let html = "";
+            items.forEach(i => { html += `<div class="data-item">${i.l}: <span>${i.v}</span></div>`; });
+            document.getElementById('res-data').innerHTML = html;
+            
+            statusText.innerText = "UPLINK SECURED // DATA LOCKED";
+        } else {
+            statusText.innerText = "SCAN ERROR: SUBJECT LOST";
+            startBtn.style.display = 'inline-block';
         }
+    }
 
-        setupAI();
-    </script>
+    saveBtn.onclick = () => {
+        html2canvas(resultBox).then(canv => {
+            const l = document.createElement('a');
+            l.download = `DARKSOUL_REPORT_${Date.now()}.png`;
+            l.href = canv.toDataURL();
+            l.click();
+        });
+    };
+
+    function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+    init();
+</script>
 </body>
 </html>
